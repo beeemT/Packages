@@ -1,4 +1,4 @@
-package sanitize
+package utils
 
 import (
 	"errors"

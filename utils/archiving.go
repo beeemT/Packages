@@ -1,4 +1,4 @@
-package filehandler
+package utils
 
 import (
 	"archive/zip"
@@ -6,24 +6,24 @@ import (
 	"os"
 )
 
-//WriteZip takes a path and zips all subelements. returns the zip
-func WriteZip(path string) (*bytes.Buffer, error) {
+//CreateZip takes a path and zips all subelements. returns the zip
+func CreateZip(path string) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 
 	zipWriter := zip.NewWriter(buffer)
 	defer zipWriter.Close()
 
-	rootSubElems, err := getFiles(path)
+	rootSubElems, err := GetFileInfos(path)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, fileInf := range rootSubElems {
-		fileInfHeader, err := zip.FileInfoHeader(fileInf)
+		fileInfHeader, err := zip.FileInfoHeader(*fileInf)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		zipFileWriter, err := zipWriter.CreateHeader(fileInfHeader)
 		if err != nil {
 			return nil, err
