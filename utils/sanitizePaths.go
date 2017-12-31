@@ -1,36 +1,56 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+//FileTypeError is used whenever a path does not point to the expected file type.
+type FileTypeError struct {
+	Name string
+	v    interface{}
+}
+
+func (err FileTypeError) Error() string {
+	return fmt.Sprintf("%s: %s", err.Name, err.v)
+}
+
 //PathToAbsDir takes a string and returns the absolute Dir of that string.
 //Calls PathToAbs on path.
 func PathToAbsDir(path string) (string, error) {
-	if !IsDir(path) {
-		path = filepath.Dir(path)
+	path, err := PathToAbs(path)
+	if err != nil {
+		return "", err
 	}
-	return PathToAbs(path)
+
+	if IsDir(path) {
+		return path, nil
+	}
+	return "", &FileTypeError{"FileTypeError: Path does not point to directory", path}
 }
 
-//PathToAbsFile takes a string and returns the absolute file of that string.
+//PathToAbsFile returns the absolute filepath of that string.
 //Returns an error if path does not point to a file.
 func PathToAbsFile(path string) (string, error) {
-	if IsFile(path) {
-		return PathToAbs(path)
+	path, err := PathToAbs(path)
+	if err != nil {
+		return "", err
 	}
-	return "", errors.New("path is not a file: " + path)
+
+	if IsFile(path) {
+		return path, nil
+	}
+	return "", &FileTypeError{"FileTypeError: Path does not point to file", path}
 }
 
-//PathToAbs takes a string and returns the absolute Path of that string
+//PathToAbs returns the absolute Path of that string.
 func PathToAbs(path string) (string, error) {
 	return filepath.Abs(path)
 }
 
-//IsDir takes a string and returns whether path is a Directory
+//IsDir returns whether path is a Directory.
 func IsDir(path string) bool {
 	path, _ = PathToAbs(path)
 	info, err := os.Stat(path)
@@ -40,8 +60,8 @@ func IsDir(path string) bool {
 	return info.IsDir()
 }
 
-//IsFile takes a string and returns whether path is a File
-//calls PathToAbs on path beforehand
+//IsFile takes a string and returns whether path is a File.
+//Calls PathToAbs on path beforehand.
 func IsFile(path string) bool {
 	path, _ = PathToAbs(path)
 	info, err := os.Stat(path)
@@ -69,7 +89,7 @@ func IsDirSubdirOf(subdir, dir string) (bool, error) {
 }
 
 //Exists checks if a element at path exists.
-//Calls PathToAbs on path beforehand
+//Calls PathToAbs on path beforehand.
 func Exists(path string) (bool, error) {
 	path, err := PathToAbs(path)
 	_, err = os.Stat(path)
