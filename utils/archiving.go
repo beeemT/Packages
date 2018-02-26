@@ -3,15 +3,14 @@ package utils
 import (
 	"archive/zip"
 	"bytes"
-	"os"
+	"io/ioutil"
 )
 
-//CreateZip takes a path and zips all subelements. returns the zip
-func CreateZip(path string) (*bytes.Buffer, error) {
+//CreateZipOfFiles takes a path and zips all subelements. returns the zip
+func CreateZipOfFiles(path string) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 
 	zipWriter := zip.NewWriter(buffer)
-	defer zipWriter.Close()
 
 	rootSubElems, err := GetFileInfos(path)
 	if err != nil {
@@ -29,13 +28,7 @@ func CreateZip(path string) (*bytes.Buffer, error) {
 			return nil, err
 		}
 
-		file, err := os.Open(fileInfHeader.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		var bytes []byte
-		_, err = file.Read(bytes)
+		bytes, err := ioutil.ReadFile(fileInfHeader.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -46,5 +39,9 @@ func CreateZip(path string) (*bytes.Buffer, error) {
 		}
 	}
 
+	err = zipWriter.Close()
+	if err != nil {
+		return nil, err
+	}
 	return buffer, nil
 }
