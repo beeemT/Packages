@@ -1,4 +1,4 @@
-package jsonutils
+package jsonutil
 
 import (
 	"bytes"
@@ -72,6 +72,7 @@ func createReaderFromFile(path string) (*os.File, error) {
 }
 
 //LoadDataFromJSONFile loads the content of a file specified by path.
+//Makes path absolute
 //Content is loaded into v.
 //Returns a JSONError on failure.
 func LoadDataFromJSONFile(path string, v interface{}) error {
@@ -86,6 +87,7 @@ func LoadDataFromJSONFile(path string, v interface{}) error {
 }
 
 //LoadDataFromCompressedJSONFile loads the content of a file specified by path and passes the file to LoadDataFromCompressedJSON.
+//Makes path absolute.
 //Closes all Readers. Only returns errors of type jsonutil.JSONError.
 func LoadDataFromCompressedJSONFile(path string, v interface{}) error {
 	file, err := createReaderFromFile(path)
@@ -142,12 +144,13 @@ func prepareJSONWrite(path string, overwrite bool) error {
 	}
 
 	if exist && !overwrite {
-		return &JSONError{"StoreError: File already exists and overwrite flag is not set", path, nil}
+		return &JSONError{"StoreError: File already exists and overwrite flag is not set", path, os.ErrExist}
 	}
 	return nil
 }
 
 //StoreDataToJSONFile converts the content of v into JSON if possible and stores the content into a file at path.
+//Makes path absolute.
 //If path already exists and the overwrite flag is not set, an error is returned.
 func StoreDataToJSONFile(path string, v interface{}, overwrite bool) error {
 	err := prepareJSONWrite(path, overwrite)
@@ -169,6 +172,7 @@ func StoreDataToJSONFile(path string, v interface{}, overwrite bool) error {
 
 //StoreDataToCompressedJSONFile converts the content of v into JSON if possible,
 //compresses the byte slice using compressionLevel (gzip.constants) and stores the content into a file at path.
+//Makes path absolute.
 //If path already exists and the overwrite flag is not set, an error is returned.
 func StoreDataToCompressedJSONFile(path string, v interface{}, overwrite bool, compressionLevel int) error {
 	err := prepareJSONWrite(path, overwrite)
