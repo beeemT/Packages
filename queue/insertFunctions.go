@@ -22,11 +22,11 @@ func (q *Queue) insertPriorityHigh(elem *queueElement) {
 
 func (q *Queue) insertPriorityLow(elem *queueElement) {
 	for i, e := range q.queSlice {
-		if e.priority >= elem.priority {
+		if e.priority > elem.priority {
 			continue
 		}
 
-		//e.prio < elem.prio
+		//e.prio <= elem.prio
 		q.queSlice = append(q.queSlice[:i], append([]*queueElement{elem}, (q.queSlice)[i:]...)...)
 		break
 	}
