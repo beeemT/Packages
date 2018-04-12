@@ -9,6 +9,10 @@ func (q *Queue) insertLifo(elem *queueElement) {
 }
 
 func (q *Queue) insertPriorityHigh(elem *queueElement) {
+	if q.numElems == 0 || (q.queSlice[q.numElems-1]).priority < elem.priority {
+		q.queSlice = append(q.queSlice, elem)
+		return
+	}
 	for i, e := range q.queSlice {
 		if e.priority < elem.priority {
 			continue
@@ -21,6 +25,10 @@ func (q *Queue) insertPriorityHigh(elem *queueElement) {
 }
 
 func (q *Queue) insertPriorityLow(elem *queueElement) {
+	if q.numElems == 0 || (q.queSlice[q.numElems-1]).priority > elem.priority {
+		q.queSlice = append(q.queSlice, elem)
+		return
+	}
 	for i, e := range q.queSlice {
 		if e.priority > elem.priority {
 			continue
