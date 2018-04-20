@@ -17,12 +17,14 @@ type Client struct {
 	defaultMaxReadBuffer int64
 }
 
-//NewClient is the constructor for client
+//NewClient is the constructor for a tcp client.
+//A defaultTimeout of 0 means that the connection does not time out.
+//If the connection uses a limited read or not has to be decided in the passed handle method.
 func NewClient(remotePort int, remoteAddr net.IP, defaultTimeout time.Duration, defaultMaxReadBuffer int64) *Client {
 	return &Client{remotePort, remoteAddr, defaultTimeout, defaultMaxReadBuffer}
 }
 
-//Connect is the exported api for the connect method. Is run in own routine.
+//Connect is the exported api for the connect method. Is run in its' own routine.
 //After the spawned routine ends, that is when the passed handle func returns waitgroup.Done is called.
 //For using the built in timeout, look at net.Conn.SetDeadline .
 func (client *Client) Connect(clientWaitGroup *sync.WaitGroup, handle func(*Conn, ...interface{}), a ...interface{}) {
