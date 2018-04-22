@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-//GetFileInfos returns a slice of Fileinfos containing the fileinfos of all sublements of path.
+//GetFileInfos returns a slice of Fileinfos containing the fileinfos of all subelements of path.
 func GetFileInfos(path string) ([]*os.FileInfo, error) {
 	var headers []*os.FileInfo
 
