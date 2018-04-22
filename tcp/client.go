@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/grekhor/Packages/utils"
 )
 
 //Client is the implementation of a tcp Client that is meant to connect to the tcp server
@@ -37,7 +39,7 @@ func (client *Client) connect(clientWaitGroup *sync.WaitGroup, handle func(*Conn
 	defer clientWaitGroup.Done()
 
 	addr := client.remoteAddr.String()
-	if client.remoteAddr.To16() != nil {
+	if utils.IsIPv6(client.remoteAddr) {
 		addr = "[" + addr + "]"
 	}
 
