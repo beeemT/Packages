@@ -7,7 +7,7 @@ import (
 
 //GetFileInfos returns a slice of Fileinfos containing the fileinfos of all subelements of path.
 func GetFileInfos(path string) ([]*os.FileInfo, error) {
-	var headers []*os.FileInfo
+	headers := make([]*os.FileInfo, 0)
 
 	visit := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
