@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/grekhor/Packages/utils"
+	"github.com/grekhor/Packages/fileutil"
 )
 
 //JSONError is either a Load Or a Store Error.
@@ -54,12 +54,12 @@ func LoadDataFromCompressedJSON(dataReader io.Reader, v interface{}) error {
 //File has to be closed by the caller.
 //Only returns jsonutil.JSONErrors.
 func createReaderFromFile(path string) (*os.File, error) {
-	path, err := utils.PathToAbs(path)
+	path, err := fileutil.PathToAbs(path)
 	if err != nil {
 		return nil, &JSONError{"PathError: Failed to make path absolute", path, err}
 	}
 
-	if !utils.IsFile(path) {
+	if !fileutil.IsFile(path) {
 		return nil, &JSONError{"PathError: Path does either not exist or is not a file", path, nil}
 	}
 
@@ -133,12 +133,12 @@ func StoreDataToCompressedJSON(v interface{}, compressionLevel int) ([]byte, err
 }
 
 func prepareJSONWrite(path string, overwrite bool) error {
-	path, err := utils.PathToAbs(path)
+	path, err := fileutil.PathToAbs(path)
 	if err != nil {
 		return &JSONError{"PathError: Failed to make path absolute", path, err}
 	}
 
-	exist, err := utils.Exists(path)
+	exist, err := fileutil.Exists(path)
 	if err != nil {
 		return &JSONError{"PathError: Failed to check if file exists", path, err}
 	}

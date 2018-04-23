@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grekhor/Packages/utils"
+	"github.com/grekhor/Packages/netutil"
 )
 
 //Client is the implementation of a tcp Client that is meant to connect to the tcp server
@@ -39,7 +39,7 @@ func (client *Client) connect(clientWaitGroup *sync.WaitGroup, handle func(*Conn
 	defer clientWaitGroup.Done()
 
 	addr := client.remoteAddr.String()
-	if utils.IsIPv6(client.remoteAddr) {
+	if netutil.IsIPv6(client.remoteAddr) {
 		addr = "[" + addr + "]"
 	}
 
