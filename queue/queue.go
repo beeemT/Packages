@@ -72,8 +72,8 @@ func NewQueueElementWithoutPriority(c interface{}) *queueElement {
 	return &queueElement{content: c}
 }
 
-//Length returns the number of elements in the queue.
-func (q *Queue) Length() int {
+//Len returns the number of elements in the queue.
+func (q *Queue) Len() int {
 	return q.numElems
 }
 

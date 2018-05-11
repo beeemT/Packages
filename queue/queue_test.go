@@ -32,7 +32,7 @@ func TestQueueBasicAllTypes(t *testing.T) {
 }
 
 func testQueue(index int, w *sync.WaitGroup, t *testing.T) {
-	loops := 100000
+	loops := 10000
 	q, err := NewQueue(Queuetype(index))
 	if err != nil {
 		t.Log(err.Error())
@@ -41,8 +41,8 @@ func testQueue(index int, w *sync.WaitGroup, t *testing.T) {
 
 	primeQueue(loops, q, Queuetype(index))
 
-	if q.Length() != loops {
-		t.Logf("[%d] Length not ok. Expected: %d but received %d", index, loops, q.Length())
+	if q.Len() != loops {
+		t.Logf("[%d] Length not ok. Expected: %d but received %d", index, loops, q.Len())
 	}
 
 	i := 0

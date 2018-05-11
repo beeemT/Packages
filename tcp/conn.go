@@ -24,7 +24,8 @@ func newConn(conn net.Conn, timeout time.Duration, maxReadBuffer int64) *Conn {
 	return &Conn{conn, timeout, maxReadBuffer}
 }
 
-//LimitedRead wraps the standard call to Read in a LimitReader. Returns c.maxReadBuffer bytes at max.
+//LimitedRead wraps the standard call to Read in a LimitReader.
+//Returns the the amount of bytes read, which is the lower number of len(b) and maxReadBuffer.
 func (c Conn) LimitedRead(b []byte) (int, error) {
 	r := io.LimitReader(c.Conn, c.maxReadBuffer)
 	return r.Read(b)

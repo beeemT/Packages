@@ -23,7 +23,12 @@ type Server struct {
 }
 
 //NewServer is the constructor for tcp.server.
-func NewServer(port int, defaultTimeout time.Duration, defaultMaxReadBuffer, maxClients int64, sigchan chan struct{}) *Server {
+//A defaultTimeout of 0 means no timeouts.
+//Timeouts have to be implemented by the programmer in the handle method that is passed to tcpserver.Start.
+//For limited reading use conn.LimitedRead in the handle method.
+//A maxClients value of 0 or lower causes the server to accept all incoming connections.
+func NewServer(port int, defaultTimeout time.Duration, defaultMaxReadBuffer, maxClients int64) *Server {
+	sigchan := make(chan struct{})
 	return &Server{port, defaultTimeout, defaultMaxReadBuffer, maxClients, 0, sigchan}
 }
 
@@ -71,7 +76,7 @@ func (server *Server) Stop() {
 func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGroup, handle func(*Conn, *int64, ...interface{}), a ...interface{}) error {
 	fmt.Println("Starting service ...")
 
-	serverSocket, err := net.Listen("tcp", strconv.Itoa(server.port))
+	serverSocket, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(server.port)))
 	if err != nil {
 		return errors.New("Failed at establishing serverSocket: " + err.Error())
 	}

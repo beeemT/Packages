@@ -11,7 +11,7 @@ import (
 	"github.com/grekhor/Packages/netutil"
 )
 
-//Client is the implementation of a tcp Client that is meant to connect to the tcp server
+//Client is the implementation of a tcp Client that is meant to connect to the tcp server.
 type Client struct {
 	remotePort           int
 	remoteAddr           net.IP
