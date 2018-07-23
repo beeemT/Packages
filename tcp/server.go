@@ -37,6 +37,13 @@ func (server Server) CurClients() int64 {
 	return server.curClients
 }
 
+//CurClientsP is the getter for *server.curClients.
+//The resulting pointer is not safe for concurrent read or write.
+//Modifying CurClients through this pointer might cause the server to malfunction.
+func (server Server) CurClientsP() *int64 {
+	return &server.curClients
+}
+
 //MaxClients is the getter for server.maxClients.
 func (server Server) MaxClients() int64 {
 	return server.maxClients
@@ -50,7 +57,7 @@ func (server *Server) SetMaxClients(maxClients int64) {
 //Start boots the server. The server waits for calling s.Stop() for a graceful shut down.
 //Start returns the waitGroup for the server so the caller can wait for the server to finish.
 //This method is mainly for specific server implementations and should not be called to start specific servers but by a specific Start implementation.
-func (server *Server) Start(handle func(*Conn, *int64, ...interface{}), a ...interface{}) *sync.WaitGroup {
+func (server *Server) Start(handle func(*Conn, ...interface{}), a ...interface{}) *sync.WaitGroup {
 	var serverWaitGroup, connWaitGroup sync.WaitGroup
 	serverWaitGroup.Add(1)
 
@@ -73,7 +80,7 @@ func (server *Server) Stop() {
 //listenAndServe boots the server. Is designed to be called into a go routine.
 //serverWaitGroup is returned upon start of the server so the caller can wait for the shutdown of the server.
 //connWaitGroup manages all instances of handle and thus all clients.
-func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGroup, handle func(*Conn, *int64, ...interface{}), a ...interface{}) error {
+func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGroup, handle func(*Conn, ...interface{}), a ...interface{}) error {
 	fmt.Println("Starting service ...")
 
 	serverSocket, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(server.port)))
@@ -95,7 +102,7 @@ func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGr
 			if err != nil {
 				log.Println("Failed at accepting new net.Conn: " + err.Error())
 			}
-			conn := newConn(netconn, server.defaultTimeout, server.defaultMaxReadBuffer)
+			conn := NewConn(netconn, server.defaultTimeout, server.defaultMaxReadBuffer)
 
 			connWaitGroup.Add(1)
 			atomic.AddInt64(&server.curClients, 1)
@@ -104,7 +111,7 @@ func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGr
 				defer connWaitGroup.Done()
 				defer atomic.AddInt64(&server.curClients, -1)
 				//TODO: Remove view for handle function on server.curClients ?
-				handle(conn, &server.curClients, a)
+				handle(conn, a)
 			}()
 
 		case <-server.sigchan:

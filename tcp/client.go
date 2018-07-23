@@ -13,8 +13,8 @@ import (
 
 //Client is the implementation of a tcp Client that is meant to connect to the tcp server.
 type Client struct {
-	remotePort           int
 	remoteAddr           net.IP
+	remotePort           int
 	defaultTimeout       time.Duration
 	defaultMaxReadBuffer int64
 }
@@ -22,8 +22,8 @@ type Client struct {
 //NewClient is the constructor for a tcp client.
 //A defaultTimeout of 0 means that the connection does not time out.
 //If the connection uses a limited read or not has to be decided in the passed handle method.
-func NewClient(remotePort int, remoteAddr net.IP, defaultTimeout time.Duration, defaultMaxReadBuffer int64) *Client {
-	return &Client{remotePort, remoteAddr, defaultTimeout, defaultMaxReadBuffer}
+func NewClient(remoteAddr net.IP, remotePort int, defaultTimeout time.Duration, defaultMaxReadBuffer int64) *Client {
+	return &Client{remoteAddr, remotePort, defaultTimeout, defaultMaxReadBuffer}
 }
 
 //Connect is the exported api for the connect method. Is run in its' own routine.
@@ -51,7 +51,7 @@ func (client *Client) connect(clientWaitGroup *sync.WaitGroup, handle func(*Conn
 		runtime.Goexit()
 	}
 
-	conn := newConn(netConn, client.defaultTimeout, client.defaultMaxReadBuffer)
+	conn := NewConn(netConn, client.defaultTimeout, client.defaultMaxReadBuffer)
 	defer conn.Close()
 
 	handle(conn, a...)

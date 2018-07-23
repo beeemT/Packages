@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-func (q *Queue) remove() (*queueElement, error) {
+func (q *Queue) remove() (*QueueElement, error) {
 	lenQ := len(q.queSlice)
 	if lenQ == 0 {
 		return nil, EmptyListError{}
@@ -23,7 +23,7 @@ func (q *Queue) handleShrink() {
 	lenQ := len(q.queSlice)
 	if float64(lenQ) < q.shrinkFactor*float64(cap(q.queSlice)) {
 		newCap := int(math.Ceil(q.afterShrinkFactor * float64(cap(q.queSlice))))
-		temp := make([]*queueElement, lenQ, newCap)
+		temp := make([]*QueueElement, lenQ, newCap)
 		copy(temp, q.queSlice[:lenQ])
 		q.queSlice = temp
 	}

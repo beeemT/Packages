@@ -20,7 +20,7 @@ func (c Conn) Timeout() time.Duration {
 
 //NewConn is the constructor for the Conn struct. The timeout of conn has to be set manually.
 //The default 0 means no timeouts. The handle function for Conn has to use net.Conn.SetDeadline for timeouts.
-func newConn(conn net.Conn, timeout time.Duration, maxReadBuffer int64) *Conn {
+func NewConn(conn net.Conn, timeout time.Duration, maxReadBuffer int64) *Conn {
 	return &Conn{conn, timeout, maxReadBuffer}
 }
 
