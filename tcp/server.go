@@ -69,6 +69,11 @@ func (server *Server) Stop() {
 	close(server.sigchan)
 }
 
+//Sigchan gets the receiving part of the servers signal channel.
+func (server *Server) Sigchan() <-chan struct{} {
+	return server.sigchan
+}
+
 //listenAndServe boots the server. Is designed to be called into a go routine.
 //connWaitGroup manages all instances of handle and thus all clients.
 func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGroup, handle func(*Conn, ...interface{}), a ...interface{}) {
@@ -81,7 +86,9 @@ func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGr
 	serverSocket, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(server.port)))
 	if err != nil {
 		log.Printf("Failed at establishing serverSocket: %s\n", err.Error())
+		return
 	}
+
 	defer func() {
 		err = serverSocket.Close()
 		if err != nil {
