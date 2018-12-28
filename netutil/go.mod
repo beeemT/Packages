@@ -1,1 +1,1 @@
-module netutil
+module github.com/beeemT/Packages/netutil

@@ -1,1 +1,1 @@
-module fileutil
+module github.com/beeemT/Packages/fileutil

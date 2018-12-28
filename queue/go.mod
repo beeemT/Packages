@@ -1,1 +1,1 @@
-module queue
+module github.com/beeemT/Packages/queue
