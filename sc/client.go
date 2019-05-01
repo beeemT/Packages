@@ -29,6 +29,7 @@ func NewClient(remoteAddr net.IP, remotePort int, defaultTimeout time.Duration, 
 //Connect is the exported api for the connect method. Is run in its' own routine.
 //After the spawned routine ends, that is when the passed handle func returns, waitgroup.Done is called on the returned waitgroup.
 //For using the built in timeout, look at net.Conn.SetDeadline .
+//The opened connection is not automatically closed. This has to be part of the passed handle function.
 func (client *Client) Connect(handle func(*Conn, ...interface{}), a ...interface{}) *sync.WaitGroup {
 	var clientWaitGroup sync.WaitGroup
 	clientWaitGroup.Add(1)
@@ -52,7 +53,6 @@ func (client *Client) connect(clientWaitGroup *sync.WaitGroup, handle func(*Conn
 	}
 
 	conn := NewConn(netConn, client.defaultTimeout, client.defaultMaxReadBuffer)
-	defer conn.Close()
 
 	handle(conn, a...)
 }
