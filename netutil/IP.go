@@ -2,6 +2,7 @@ package netutil
 
 import (
 	"errors"
+	"fmt"
 	"net"
 )
 
@@ -41,4 +42,18 @@ func IsIPv6(ip net.IP) bool {
 		return true
 	}
 	return false
+}
+
+//BuildIPAddressString builds a string representation of the passed port and IP.
+//IPv4 Format: ip:port
+//IPv6 Format: [ip]:port
+//It does not guarantee that the port is inside the 0-65535 range.
+func BuildIPAddressString(ip net.IP, port int) string {
+	addr := ip.String()
+	if IsIPv6(ip) {
+		addr = "[" + addr + "]"
+	}
+
+	return fmt.Sprintf("%s:%d", addr, port)
+
 }
