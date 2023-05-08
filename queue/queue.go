@@ -9,13 +9,13 @@ import (
 //  Always structure the slice in a way that the item at len(queSlice)-1 is the item for the remove operation
 //  For same main ordering property of two elements the element that is older will be removed.
 //	Fifo:
-//		first elem in slice is the last inserted elem
+//		len(queSlice)-1 is the fist inserted elem
 //	Lifo:
-//		first elem in slice is the first inserted elem
+//		len(queSlice)-1 is the last inserted elem
 //	PriorityHigh:
-//		first elem in slice has lowest priority, last elem highest
+//		len(queSlice)-1 is the elem with highest priority
 //	PriorityLow:
-//		first elem in slice has highest priority, last elem lowest
+//		len(queSlice)-1 is the elem with lowest priority
 type Queuetype int
 
 const (
@@ -37,19 +37,23 @@ const (
 	numQueuetypes = 5
 )
 
+//Element is the interface encapsulating all element types
+type Element interface {
+	Priority() float64
+	SetPriority(float64)
+
+	Content() interface{}
+	SetContent(interface{})
+}
+
 //Queue is a queue of type Queuetype
 type Queue struct {
 	order                           Queuetype
 	shrinkFactor, afterShrinkFactor float64
 	lock                            sync.Mutex
-	queSlice                        []*QueueElement
-	numElems                        int
-	maxNumElems                     int
-}
-
-type QueueElement struct {
-	priority float64
-	content  interface{}
+	queSlice                        []Element
+	numElements                     int
+	maxnumElements                  int
 }
 
 //NewQueue builds a new Queue with the passed Queuetype.
@@ -59,51 +63,52 @@ func NewQueue(tp Queuetype) (*Queue, error) {
 	if tp < 0 || tp > numQueuetypes {
 		return nil, InvalidQueuetypeError{}
 	}
-	return &Queue{order: tp, queSlice: make([]*QueueElement, 0), shrinkFactor: 0.5, afterShrinkFactor: 0.75}, nil
+	return &Queue{order: tp, queSlice: make([]Element, 0), shrinkFactor: 0.5, afterShrinkFactor: 0.75}, nil
 }
 
-//NewQueueElementWithPriority builds a new QueueElement with the passed content and priority.
+//NewElementF64WithPriority builds a new Element with the passed content and priority.
 //You cannot work with the element directly. This return value is only meant to be passed to
 //queue functions.
-func NewQueueElementWithPriority(c interface{}, priority float64) *QueueElement {
-	return &QueueElement{priority: priority, content: c}
+func NewElementF64WithPriority(c interface{}, priority float64) Element {
+	return &ElementF64W{priority: priority, content: &c}
 }
 
-//NewQueueElementWithoutPriority builds a new QueueElement with the passed content and priority = 0.
+//NewBaseElement builds a new Element with the passed content and priority = 0.
 //You cannot work with the element directly. This return value is only meant to be passed to
 //queue functions.
-func NewQueueElementWithoutPriority(c interface{}) *QueueElement {
-	return &QueueElement{content: c}
+func NewBaseElement(c interface{}) Element {
+	return &BaseElement{content: &c}
 }
 
 //Len returns the number of elements in the queue.
 func (q *Queue) Len() int {
-	return q.numElems
+	return q.numElements
 }
 
-//SetLimit sets the max capacity for the queue. Panics if limit is < 0.
-func (q *Queue) SetLimit(limit int) {
+//SetLimit sets the max capacity for the queue. Returns a InvalidQueueLimitError if limit < 0.
+func (q *Queue) SetLimit(limit int) error {
 	if limit < 0 {
-		panic("Limit for Queue is out of bounds.")
+		return InvalidQueueLimitError{}
 	}
-	q.maxNumElems = limit
+	q.maxnumElements = limit
+	return nil
 }
 
 //Append literally appends the element to the queue.
 //Append does not uphold the invariant of the queue defined by the Queuetype and is thus unsafe.
 //Use Insert for honoring the invariant.
-func (q *Queue) Append(elem *QueueElement) {
+func (q *Queue) Append(elem Element) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	q.queSlice = append(q.queSlice, elem)
-	q.numElems++
+	q.numElements++
 }
 
-//Insert inserts the passed element into the queue, accoring to the Queuetype of the queue.
+//Insert inserts the passed element into the queue, according to the Queuetype of the queue.
 //Insert upholds the invariant of the Queue.
-//When there are multiple elems with the same priority the oldest elem will be the first that is removed.
-func (q *Queue) Insert(elem *QueueElement) {
+//When there are multiple elements with the same priority the oldest elem will be the first that is removed.
+func (q *Queue) Insert(elem Element) error {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -117,16 +122,17 @@ func (q *Queue) Insert(elem *QueueElement) {
 	case PriorityLow:
 		q.insertPriorityLow(elem)
 	case FifoLimited:
-		q.insertFifoLimited(elem)
+		return q.insertFifoLimited(elem)
 	default:
-		panic("Queue has unknown order type. Can not insert elem in queue of unknown order type.")
+		return InvalidQueuetypeError{}
 	}
-	q.numElems++
+	q.numElements++
+	return nil
 }
 
 //Remove pops the element that is meant to be removed first according to the queues order.
-//When there are multiple elems with the same priority the oldest elem will be the first that is removed.
-//Returns the QueueElement split up into its pieces.
+//When there are multiple elements with the same priority the oldest elem will be the first that is removed (FIFO).
+//Returns the Element split up into its pieces.
 //If the list is empty, an error is returned.
 func (q *Queue) Remove() (interface{}, float64, error) {
 	q.lock.Lock()
@@ -136,14 +142,14 @@ func (q *Queue) Remove() (interface{}, float64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	q.numElems--
-	return elemPointer.content, elemPointer.priority, nil
+	q.numElements--
+	return elemPointer.Content(), elemPointer.Priority(), nil
 }
 
 //RemoveElement pops the element that is meant to be removed first according to the queues order.
-//When there are multiple elems with the same priority the oldest elem will be the first that is removed.
-//Returns the pointer to the QueueElement itself.
-func (q *Queue) RemoveElement() (*QueueElement, error) {
+//When there are multiple elements with the same priority the oldest elem will be the first that is removed.
+//Returns the pointer to the Element itself.
+func (q *Queue) RemoveElement() (Element, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -152,14 +158,14 @@ func (q *Queue) RemoveElement() (*QueueElement, error) {
 		return nil, err
 	}
 
-	q.numElems--
+	q.numElements--
 	return elemP, nil
 }
 
-//DeletePointer deletes all occurences of elem out of the queue.
+//DeletePointer deletes all occurrences of elem out of the queue.
 //This function works independent from the queueType.
-//Returns number of removed elems.
-func (q *Queue) DeletePointer(elem *QueueElement) int {
+//Returns number of removed elements.
+func (q *Queue) DeletePointer(elem Element) int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -168,61 +174,74 @@ func (q *Queue) DeletePointer(elem *QueueElement) int {
 		if e == elem {
 			q.delete(i)
 			counter++
-			q.numElems--
+			q.numElements--
 		}
 	}
 	return counter
 }
 
-//DeleteElem deletes all occurences of elem out of the queue.
+//DeleteElem deletes all occurrences of elem out of the queue.
 //This function works independent from the queueType.
-//Returns number of removed elems.
-func (q *Queue) DeleteElem(elem QueueElement) int {
+//Returns number of removed elements.
+func (q *Queue) DeleteElem(elem Element) int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	counter := 0
 	for i, e := range q.queSlice {
-		if *e == elem {
+		if e == elem {
 			q.delete(i)
 			counter++
-			q.numElems--
+			q.numElements--
 		}
 	}
 	return counter
 }
 
-//UpdatePriority updates the priority of all elements having the oldPriority with the newPriority.
-//Upholds the order of the queue.
+//UpdatePriority updates the priority of all elements with priority oldPriority to the newPriority.
+//Upholds the invariant of the queue.
 //Returns the number of updates.
-//Fifo, Lifo -> no reordering of elements
-//PriorityHigh, PriorityLow -> no reordering of elements unless performanceFlag is set.
-//If performanceFlag is set, elements with the same priority will be reversed in their order.
+//If performanceFlag is set, elements with the same priority will be reversed in their order for ordertypes
+//PriorityHigh and PriorityLow.
 func (q *Queue) UpdatePriority(oldPriority, newPriority float64, performanceFlag bool) int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	counter := 0
-	list := make([]*QueueElement, 0) //for buffering elements for reinsertion
 
-	for i, e := range q.queSlice {
-		if e.priority == oldPriority {
-			switch q.order {
-			case Lifo, Fifo:
-				//modifing e works because queSlice is *QueueElement
-				//+ Lifo and Fifo both are not sorted after priority
-				e.priority = newPriority
+	var list []Element
+	if !performanceFlag {
+		list = make([]Element, 0) //for buffering elements for reinsertion
+	}
 
-			case PriorityHigh, PriorityLow:
+	switch q.order {
+	case Lifo, Fifo:
+		for _, e := range q.queSlice { //O(n)
+			//modifing e works because queSlice is Element
+			//+ Lifo and Fifo both are not sorted after priority
+
+			if e.Priority() == oldPriority {
+				e.SetPriority(newPriority)
+				counter++
+			}
+		}
+
+	case PriorityHigh, PriorityLow:
+		//todo: use binsearch to find first elem with priority
+		var modFlag bool
+
+		for i, e := range q.queSlice {
+			if e.Priority() == oldPriority {
 				q.deleteWithoutMemoryManagement(i) //delete without MemoryManagement because elements get reinserted
-				e.priority = newPriority
+				e.SetPriority(newPriority)
 				if performanceFlag {
-					q.Insert(e) //might reverse the order within the elems with the same priority (depends on q.order)
+					q.Insert(e) //reverses the order within elements with the same priority
 				} else {
 					list = append(list, e)
 				}
+			} else if modFlag {
+				break
 			}
-			counter++
 		}
 	}
 
@@ -236,11 +255,11 @@ func (q *Queue) UpdatePriority(oldPriority, newPriority float64, performanceFlag
 	return counter
 }
 
-//GetAllElems returns a slice of references to all elements content.
-func (q *Queue) GetAllElems() []interface{} {
-	ret := make([]interface{}, q.numElems)
+//GetAllElements returns a slice of references to all elements content.
+func (q *Queue) GetAllElements() []interface{} {
+	ret := make([]interface{}, q.numElements)
 	for _, elem := range q.queSlice {
-		ret = append(ret, elem.content)
+		ret = append(ret, elem.Content())
 	}
 	return ret
 }

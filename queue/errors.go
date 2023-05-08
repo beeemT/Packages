@@ -18,6 +18,10 @@ type IndexOutOfBoundsError struct {
 type InvalidQueuetypeError struct {
 }
 
+//InvalidQueueLimitError is returned when a limit < 0 for the queue is encountered
+type InvalidQueueLimitError struct {
+}
+
 func (e EmptyListError) Error() string {
 	return fmt.Sprintf("%s", "Queue is empty.")
 }
@@ -28,4 +32,8 @@ func (e IndexOutOfBoundsError) Error() string {
 
 func (e InvalidQueuetypeError) Error() string {
 	return fmt.Sprintf("%s", "Provided Queuetype is not a valid Queuetype.")
+}
+
+func (e InvalidQueueLimitError) Error() string {
+	return fmt.Sprintf("%s", "Provided limit for queue is not a valid limit.")
 }

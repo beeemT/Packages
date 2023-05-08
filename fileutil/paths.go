@@ -112,9 +112,24 @@ func Parent(path string) (string, error) {
 		return "", err
 	}
 
-	dir = dir[:strings.LastIndex(dir, "/")]
+	isBackslash := false
+	if strings.Contains(dir, "\\") {
+		isBackslash = true
+		dir = strings.ReplaceAll(dir, "\\", "/")
+	}
+
+	index := strings.LastIndex(dir, "/")
+	if index == -1 {
+		return dir, nil
+	}
+
+	dir = dir[:index]
 	if dir == "" {
 		dir = "/"
+	}
+
+	if isBackslash {
+		dir = strings.ReplaceAll(dir, "/", "\\")
 	}
 
 	return dir, nil

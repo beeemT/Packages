@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-//Conn wraps the net.Conn and implements timeouts and limiting the read bytes of conn.
+//Conn wraps net.Conn and implements timeouts and limited reading of conn.
 type Conn struct {
 	net.Conn
 	timeout       time.Duration

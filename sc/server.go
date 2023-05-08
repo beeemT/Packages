@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//Server is the representing struct of a universal tcpserver.
+//Server is the representing struct of a universal server.
 type Server struct {
 	port           int
 	defaultTimeout time.Duration
@@ -18,16 +18,44 @@ type Server struct {
 	//maxClients <= 0 means no restriction in client count.
 	defaultMaxReadBuffer, maxClients, curClients int64
 	sigchan                                      chan struct{}
+	proto                                        protocol
 }
 
-//NewServer is the constructor for tcp.server.
+//NewServer is the constructor for a server.
 //A defaultTimeout of 0 means no timeouts.
-//Timeouts have to be implemented by the programmer in the handle method that is passed to tcpserver.Start.
+//Timeouts have to be implemented by the programmer in the handle method that is passed to server.Start.
 //For limited reading use conn.LimitedRead in the handle method.
 //A maxClients value of 0 or lower causes the server to accept all incoming connections.
-func NewServer(port int, defaultTimeout time.Duration, defaultMaxReadBuffer, maxClients int64) *Server {
+func NewServer(port int, defaultTimeout time.Duration, defaultMaxReadBuffer, maxClients int64, proto protocol) *Server {
 	sigchan := make(chan struct{})
-	return &Server{port, defaultTimeout, defaultMaxReadBuffer, maxClients, 0, sigchan}
+	return &Server{port: port,
+		defaultTimeout:       defaultTimeout,
+		defaultMaxReadBuffer: defaultMaxReadBuffer,
+		maxClients:           maxClients,
+		sigchan:              sigchan,
+		proto:                proto}
+}
+
+//NewTCPServer is the constructor for a server with the protocol prefilled.
+func NewTCPServer(port int, defaultTimeout time.Duration, defaultMaxReadBuffer, maxClients int64) *Server {
+	sigchan := make(chan struct{})
+	return &Server{port: port,
+		defaultTimeout:       defaultTimeout,
+		defaultMaxReadBuffer: defaultMaxReadBuffer,
+		maxClients:           maxClients,
+		sigchan:              sigchan,
+		proto:                tcp}
+}
+
+//NewUDPServer is the constructor for a server with the protocol prefilled.
+func NewUDPServer(port int, defaultTimeout time.Duration, defaultMaxReadBuffer, maxClients int64) *Server {
+	sigchan := make(chan struct{})
+	return &Server{port: port,
+		defaultTimeout:       defaultTimeout,
+		defaultMaxReadBuffer: defaultMaxReadBuffer,
+		maxClients:           maxClients,
+		sigchan:              sigchan,
+		proto:                udp}
 }
 
 //CurClients is the getter for server.curClients.
@@ -77,13 +105,13 @@ func (server *Server) Sigchan() <-chan struct{} {
 //listenAndServe boots the server. Is designed to be called into a go routine.
 //connWaitGroup manages all instances of handle and thus all clients.
 func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGroup, handle func(*Conn, ...interface{}), a ...interface{}) {
-	fmt.Println("Starting service ...")
+	log.Println("Starting service ...")
 	defer serverWaitGroup.Done()
 
 	closeFlag := false
 	connChan := make(chan *net.Conn, 10)
 
-	serverSocket, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(server.port)))
+	serverSocket, err := net.Listen(server.proto.String(), fmt.Sprintf(":%s", strconv.Itoa(server.port)))
 	if err != nil {
 		log.Printf("Failed at establishing serverSocket: %s\n", err.Error())
 		return
@@ -101,7 +129,7 @@ func (server *Server) listenAndServe(serverWaitGroup, connWaitGroup *sync.WaitGr
 
 	serverWaitGroup.Add(1)
 	go server.listen(&serverSocket, connChan, &closeFlag, serverWaitGroup)
-	fmt.Println("Service started successfully!")
+	log.Println("Service started successfully!")
 
 fl:
 	for {
@@ -130,7 +158,6 @@ fl:
 }
 
 func (server *Server) listen(socket *net.Listener, connChan chan *net.Conn, closeFlag *bool, serverWaitGroup *sync.WaitGroup) {
-	serverSocket := *socket
 	defer serverWaitGroup.Done()
 	defer close(connChan)
 
@@ -144,12 +171,12 @@ fl:
 				continue
 			}
 
-			netConn, err := serverSocket.Accept()
+			netConn, err := (*socket).Accept()
 			if err != nil {
 				if *closeFlag {
 					continue
 				}
-				log.Println("Failed at accepting new net.Conn: " + err.Error())
+				log.Println("Failed at accepting new connection: " + err.Error())
 				continue
 			}
 
@@ -159,7 +186,7 @@ fl:
 }
 
 func cleanup(connWaitGroup *sync.WaitGroup) {
-	fmt.Println("Caught shutdown signal. Shutting down server ...")
+	log.Println("Caught shutdown signal. Shutting down server ...")
 	connWaitGroup.Wait()
-	fmt.Println("Successfully shut down server!")
+	log.Println("Successfully shut down server!")
 }

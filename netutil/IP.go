@@ -12,7 +12,7 @@ func IP(ip string) (net.IP, error) {
 	ret := net.ParseIP(ip)
 	if ret == nil {
 		err := errors.New("Not an IP")
-		return ret, err
+		return nil, err
 	}
 
 	return ret, nil

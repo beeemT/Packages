@@ -1,2 +1,2 @@
-github.com/beeemT/Packages v0.0.0-20180918111811-b87361efa9a1 h1:UEjGVI6N6+G0oa2IFV834J3ZAnNBjab0yNyknLxLgE0=
-github.com/beeemT/Packages v0.0.0-20180918111811-b87361efa9a1/go.mod h1:E+ilj6SqEpOpYIgKQULbd3db4/x76IFRUbahAkdM8OQ=
+github.com/beeemT/Packages/netutil v1.1.0 h1:7QLFogFZcLNCdRlIYd2iq+PXlTH5LN8iQJoR0WmFAFM=
+github.com/beeemT/Packages/netutil v1.1.0/go.mod h1:5HJSCSqRcTYdQ3+q1XheO82v4lheUyCD6TCQx3rp65c=
